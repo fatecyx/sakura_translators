@@ -5,6 +5,7 @@
 import argparse
 import os
 import json
+import shutil
 import time
 
 import pandas as pd
@@ -374,15 +375,15 @@ class Translator:
             result = self.split_and_translate(original_text)
             self._save_result(original_text, result)
 
-    def output_result(self):
+    def output_result(self, is_delete=False):
         with open(self.new_file, 'w', encoding='utf-8') as file:
             json.dump(self.dic_new, file, indent=4, ensure_ascii=False)
         if self.dic_err:
             with open(self.err_file, 'w', encoding='utf-8') as file:
                 json.dump(self.dic_err, file, indent=4, ensure_ascii=False)
                 print("有错误", len(self.dic_err))
-        # if os.path.exists(cache_file):
-        #     os.remove(cache_file)
+        if is_delete and os.path.exists(self.cache_file):
+            os.remove(self.cache_file)
 
 
 class WT:
@@ -498,6 +499,8 @@ if __name__ == '__main__':
     parser.add_argument('--log', type=str, default=r"/kaggle/working/log.txt", help='log file')
     parser.add_argument('--debug', action='store_true', help='debug mode')
     parser.add_argument('--silent', action='store_true', help='silent mode')
+    parser.add_argument('--zip', type=str, default=None, help='结果目录压缩到')
+    parser.add_argument('--delete', action='store_true', help='delete cache after output success')
 
     args = parser.parse_args()
 
@@ -530,6 +533,9 @@ if __name__ == '__main__':
             trans.save_cache()
             break
         else:
-            trans.output_result()
+            trans.output_result(args.delete)
+            if args.zip:
+                # zip_file(args.zip, dst_folder)
+                shutil.make_archive(args.zip, 'zip', dst_folder)
     # with open(r'test_translations.json', 'w', encoding='utf-8') as fp:
     #     json.dump(dic_output_total, fp, indent=4, ensure_ascii=False)
