@@ -76,7 +76,7 @@ re.compile(r'en\([^\)]*\)'),
 re.compile(r'if\([^\)]*(?:\)|$)'),
 re.compile(r'(?:[\\\u001b](?:[!\$\.\{\}\|]|[a-zA-Z]{1,6}\[[^\[\]]*(?:\]|$)|\\?[A-Za-z]))'),
 re.compile(r'\%[a-z\d]+'),
-re.compile(r'[\u3000＠｜_\s]'),
+#re.compile(r'[\u3000＠｜_\s]'),
     ],
     'ks': [
 re.compile(r'\[[^\]]*\]')
@@ -272,7 +272,7 @@ class Translator:
             try:
                 dic_gpt = self.load_gpt_dict_list(dict_file)
                 logger.info(f"已加载GPT字典{len(dic_gpt)}条")
-                print(dic_gpt)
+                #print(dic_gpt)
             except Exception as e:
                 logger.exception(f"加载GPT字典失败：{e}")
 
@@ -304,7 +304,8 @@ class Translator:
 
 
 
-    def load_gpt_dict_list(self, gpt_dict_path):
+    @staticmethod
+    def load_gpt_dict_list(gpt_dict_path):
         with open(gpt_dict_path, 'r', encoding='utf-8') as f:
             content = f.read()
             try:
@@ -318,7 +319,7 @@ class Translator:
                             "src": src.strip(),
                             "dst": dst.strip()
                         }
-                    gpt_dict_data.append(dict_temp)
+                        gpt_dict_data.append(dict_temp)
             except json.JSONDecodeError:
                 raw_data = content.splitlines()
 
@@ -569,6 +570,8 @@ class WT:
         )
 
         text_result = result["choices"][0]["message"]['content']
+        if text_result.endswith("。") and not cur_text.endswith(tuple("。！？.,!?")):
+            text_result = text_result.rstrip("。")
         has_degradation = result["choices"][0]["finish_reason"] != "stop"
         return {"text": text_result, "has_degradation": has_degradation}
 
@@ -668,6 +671,9 @@ if __name__ == '__main__':
         file_list = [src_folder]
     if not file_list:
         print(f"没有找到文件{src_folder}")
+    if replace_file:
+        lst_gpt =Translator.load_gpt_dict_list(replace_file)
+        print(f"加载替换词典{replace_file}成功，共{len(lst_gpt)}条： {lst_gpt}")
     for path in file_list:
         dst_path = os.path.join(dst_folder,
                                 os.path.relpath(path, src_folder if os.path.isdir(src_folder) else os.path.dirname(src_folder))
@@ -689,3 +695,5 @@ if __name__ == '__main__':
             if args.zip:
                 # zip_file(args.zip, dst_folder)
                 shutil.make_archive(args.zip, 'zip', dst_folder)
+    if args.zip and os.path.exists(dst_folder) and os.listdir(dst_folder):
+        shutil.make_archive(args.zip, 'zip', dst_folder)
