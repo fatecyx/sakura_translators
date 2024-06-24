@@ -107,7 +107,7 @@ def add_to_dict(dic, text):
 
     if re_angle_content.search(text):  # 有<>
         lst = re_angle_content.split(text)
-        lst = split_by_angle_brackets(text)
+        #lst = split_by_angle_brackets(text)
         if len(lst)>1:
             for i in lst:
                 add_to_dict(dic, i)
